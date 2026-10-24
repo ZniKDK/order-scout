@@ -69,6 +69,18 @@ collect_interval_min: 15
 
 # Проекты портфолио для ссылок в откликах
 portfolio:
+  - name: Парсер личного кабинета по артикулам из Excel (Playwright)
+    url: https://github.com/ZniKDK/cabinet-parser
+    tags: [парсер, кабинет, личного кабинета, excel, артикул, playwright, selenium]
+  - name: Сайт с прайсом из Google Таблицы и заявками в Telegram
+    url: https://github.com/ZniKDK/sheet-site
+    tags: [сайт, лендинг, google таблиц, google sheets, заявк, прайс]
+  - name: Бот мониторинга новых лотов и объявлений
+    url: https://github.com/ZniKDK/listing-watch
+    tags: [мониторинг, отслеживан, уведомлен, аукцион, объявлен, бот]
+  - name: Обходчик каталогов (PostgreSQL, Docker, очередь)
+    url: https://github.com/ZniKDK/site-crawler
+    tags: [парсер, каталог, сбор данных, собрать базу, postgresql, docker, скрапинг]
   - name: Telegram-бот записи клиентов
     url: https://github.com/ZniKDK/tg-lead-bot
     tags: [бот, telegram, aiogram, запись]
