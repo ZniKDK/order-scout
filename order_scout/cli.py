@@ -3,15 +3,18 @@
 import argparse
 import asyncio
 import logging
+import os
 import sys
 from pathlib import Path
 
 import httpx
+from dotenv import load_dotenv
 
 from order_scout.collector import SOURCES, collect_once
 from order_scout.config import ConfigError, load_config
 from order_scout.exchange import export_pending, import_evaluations
 from order_scout.rules_evaluator import evaluate_by_rules
+from order_scout.runner import run_forever
 from order_scout.storage import Storage
 
 DEFAULT_CONFIG = Path("config.yaml")
@@ -46,6 +49,12 @@ def _build_parser() -> argparse.ArgumentParser:
                           help="демо-оценка по простым правилам")
     evaluate.add_argument("--config", type=Path, default=DEFAULT_CONFIG)
     evaluate.add_argument("--db", type=Path, default=DEFAULT_DB)
+
+    run = commands.add_parser("run", help="работать постоянно: сбор, карточки, бот")
+    run.add_argument("--config", type=Path, default=DEFAULT_CONFIG)
+    run.add_argument("--db", type=Path, default=DEFAULT_DB)
+    run.add_argument("--demo", action="store_true",
+                     help="вымышленные заказы и оценка правилами — без бирж")
     return parser
 
 
@@ -130,6 +139,31 @@ async def _collect(args: argparse.Namespace) -> int:
     return 0
 
 
+def _run(args: argparse.Namespace) -> int:
+    cfg = _load_config_or_exit(args.config)
+    if cfg is None:
+        return 2
+    load_dotenv(Path(".env"))
+    token = os.getenv("BOT_TOKEN", "").strip()
+    chat_id = os.getenv("CHAT_ID", "").strip()
+    if not token or not chat_id.lstrip("-").isdigit():
+        print("Нет BOT_TOKEN или CHAT_ID: заполните .env по образцу .env.example", file=sys.stderr)
+        return 2
+    names = ["demo"] if args.demo else cfg.sources
+    storage = Storage(args.db)
+    print("Работаю. Остановить — Ctrl+C")
+    try:
+        asyncio.run(run_forever(
+            storage, cfg, [SOURCES[name]() for name in names],
+            token, int(chat_id), evaluate_rules=args.demo,
+        ))
+    except KeyboardInterrupt:
+        print("Остановлено")
+    finally:
+        storage.close()
+    return 0
+
+
 def _stats(args: argparse.Namespace) -> int:
     storage = Storage(args.db)
     try:
@@ -151,5 +185,8 @@ def main(argv: list[str] | None = None) -> int:
     _setup_logging(args.db)
     if args.command == "collect":
         return asyncio.run(_collect(args))
-    handlers = {"stats": _stats, "export": _export, "import": _import, "evaluate": _evaluate}
+    handlers = {
+        "stats": _stats, "export": _export, "import": _import,
+        "evaluate": _evaluate, "run": _run,
+    }
     return handlers[args.command](args)
