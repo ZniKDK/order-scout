@@ -1,0 +1,67 @@
+# Пример настроек. Скопируйте в config.yaml и поправьте под себя.
+
+# Откуда собирать заказы: flru, kwork (demo — вымышленные заказы для проверки)
+sources: [flru, kwork]
+
+# Слова ниш: заказ проходит, если в заголовке или описании есть хотя бы одно
+niches:
+  - телеграм-бот
+  - telegram-бот
+  - telegram бот
+  - бот
+  - aiogram
+  - парсер
+  - парсинг
+  - спарсить
+  - скрипт
+  - автоматизация
+  - лендинг
+  - сайт-визитка
+  - PyQt
+  - Excel
+  - отчёт
+  - Google Таблиц
+  - API
+
+# Стоп-слова: заказ отсеивается, если встречается любое из них
+stop_words:
+  - 1С
+  - 1C        # латинская C
+  - Битрикс
+  - Bitrix
+  - WordPress
+  - Tilda
+  - Тильд
+  - ручной ввод
+  - логотип
+  - накрутк
+
+# Минимальный бюджет, ₽ (заказы без бюджета проходят)
+min_budget_rub: 1000
+# Сколько откликов уже может быть у заказа
+max_offers: 50
+# Порог оценки 0–10: ниже — карточка не приходит
+score_threshold: 6
+# Как часто проверять биржи, минут (не меньше 10)
+collect_interval_min: 15
+
+# Проекты портфолио для ссылок в откликах
+portfolio:
+  - name: Telegram-бот записи клиентов
+    url: https://github.com/ZniKDK/tg-lead-bot
+    tags: [бот, telegram, aiogram, запись]
+  - name: Парсер каталога в Excel и Google Таблицы
+    url: https://github.com/ZniKDK/web-parser
+    tags: [парсер, excel, google таблицы, скрипт]
+  - name: Свод прайс-листов поставщиков
+    url: https://github.com/ZniKDK/price-list-merger
+    tags: [excel, прайс, pyqt, автоматизация]
+  - name: Учёт заказов фрилансера (PyQt6 + PostgreSQL)
+    url: https://github.com/ZniKDK/FreelanceDesk
+    tags: [pyqt, десктоп, база данных]
+  - name: Витрина демо-лендингов
+    url: https://github.com/ZniKDK/landing-showcase
+    tags: [лендинг, сайт, html, css, js]
+  - name: Лендинг с заявками в Telegram
+    url: https://github.com/ZniKDK/landing-demo
+    tags: [лендинг, сайт, telegram, форма]
