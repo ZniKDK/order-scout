@@ -2,3 +2,6 @@
 httpx==0.28.1
 PyYAML==6.0.3
 python-dotenv==1.2.4
+
+# Telegram-бот
+aiogram==3.31.0
