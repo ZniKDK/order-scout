@@ -1,5 +1,6 @@
 """Сборщик: обходит источники, сохраняет новые заказы и прогоняет их через фильтр."""
 
+import asyncio
 import logging
 from dataclasses import dataclass, field
 
@@ -41,14 +42,36 @@ class CollectReport:
     errors: list[str] = field(default_factory=list)
 
 
+PAGE_PAUSE_SEC = 2   # пауза между страницами одной биржи — не частим
+
+
+def make_sources(names: list[str], cfg: Config) -> list[Source]:
+    """Создаёт источники по именам из конфига (Kwork — с разделом и числом страниц)."""
+    sources = []
+    for name in names:
+        if name == "kwork":
+            sources.append(KworkSource(category=cfg.kwork_category, pages=cfg.kwork_pages))
+        else:
+            sources.append(SOURCES[name]())
+    return sources
+
+
 async def fetch(source: Source, client: httpx.AsyncClient) -> list[Order]:
-    """Скачивает ленту источника и разбирает её. Ошибки сети пробрасывает."""
+    """Скачивает ленту источника (одну или несколько страниц) и разбирает её. Ошибки сети пробрасывает."""
     local_path = getattr(source, "local_path", None)
     if local_path is not None:
         return source.parse(local_path.read_text(encoding="utf-8"))
-    response = await client.get(source.url, headers=HEADERS, timeout=TIMEOUT_SEC)
-    response.raise_for_status()
-    return source.parse(response.text)
+    orders: dict[str, Order] = {}
+    urls = getattr(source, "urls", [source.url])
+    for number, url in enumerate(urls):
+        if number:
+            await asyncio.sleep(PAGE_PAUSE_SEC)
+        response = await client.get(url, headers=HEADERS, timeout=TIMEOUT_SEC)
+        response.raise_for_status()
+        # Пока листаем, заказы сдвигаются: один и тот же может попасть на две страницы
+        for order in source.parse(response.text):
+            orders.setdefault(order.external_id, order)
+    return list(orders.values())
 
 
 async def collect_once(

@@ -74,6 +74,28 @@ async def test_parse_error_reported_others_collected(storage, cfg):
     assert len(report.errors) == 1 and "broken" in report.errors[0]
 
 
+async def test_several_kwork_pages_fetched_and_deduplicated(storage, cfg, monkeypatch):
+    monkeypatch.setattr("order_scout.collector.PAGE_PAUSE_SEC", 0)
+    seen_urls = []
+
+    def handler(request):
+        seen_urls.append(str(request.url))
+        return httpx.Response(200, text=KWORK_PAGE)   # одинаковые страницы — заказы повторяются
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        report = await collect_once(storage, cfg, [KworkSource(category=11, pages=2)], client)
+    assert seen_urls == ["https://kwork.ru/projects?c=11&page=1", "https://kwork.ru/projects?c=11&page=2"]
+    assert report.new == 3
+
+
+def test_make_sources_uses_config():
+    from order_scout.collector import make_sources
+    from order_scout.config import Config
+
+    [kwork] = make_sources(["kwork"], Config(kwork_category=11, kwork_pages=4))
+    assert len(kwork.urls) == 4 and "c=11" in kwork.urls[0]
+
+
 async def test_timeout_is_reported_not_raised(storage, cfg):
     transport = make_transport(httpx.ReadTimeout("таймаут"))
     async with httpx.AsyncClient(transport=transport) as client:

@@ -10,7 +10,7 @@ from pathlib import Path
 import httpx
 from dotenv import load_dotenv
 
-from order_scout.collector import SOURCES, collect_once
+from order_scout.collector import collect_once, make_sources
 from order_scout.config import ConfigError, load_config
 from order_scout.exchange import export_pending, import_evaluations
 from order_scout.rules_evaluator import evaluate_by_rules
@@ -126,7 +126,7 @@ async def _collect(args: argparse.Namespace) -> int:
     if cfg is None:
         return 2
     names = ["demo"] if args.demo else cfg.sources
-    sources = [SOURCES[name]() for name in names]
+    sources = make_sources(names, cfg)
     storage = Storage(args.db)
     try:
         async with httpx.AsyncClient(follow_redirects=True) as client:
@@ -154,7 +154,7 @@ def _run(args: argparse.Namespace) -> int:
     print("Работаю. Остановить — Ctrl+C")
     try:
         asyncio.run(run_forever(
-            storage, cfg, [SOURCES[name]() for name in names],
+            storage, cfg, make_sources(names, cfg),
             token, int(chat_id), evaluate_rules=args.demo,
         ))
     except KeyboardInterrupt:

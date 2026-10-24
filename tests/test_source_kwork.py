@@ -39,6 +39,14 @@ def test_offers_count_as_string():
     assert KworkSource().parse(page)[0].offers_count == 12
 
 
+def test_urls_for_category_and_pages():
+    assert KworkSource(category=11, pages=2).urls == [
+        "https://kwork.ru/projects?c=11&page=1",
+        "https://kwork.ru/projects?c=11&page=2",
+    ]
+    assert KworkSource().urls == ["https://kwork.ru/projects"]
+
+
 def test_page_without_wants(caplog):
     with caplog.at_level(logging.WARNING):
         assert KworkSource().parse("<html><body>Новая вёрстка</body></html>") == []

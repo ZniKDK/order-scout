@@ -37,6 +37,14 @@ class KworkSource:
     name = "kwork"
     url = "https://kwork.ru/projects"
 
+    def __init__(self, category: int | None = None, pages: int = 1) -> None:
+        # Без раздела и с одной страницей — общая лента (первые 12 заказов)
+        if category is None and pages == 1:
+            self.urls = [self.url]
+        else:
+            prefix = f"{self.url}?c={category}&" if category is not None else f"{self.url}?"
+            self.urls = [f"{prefix}page={n}" for n in range(1, pages + 1)]
+
     def parse(self, payload: str) -> list[Order]:
         start = payload.find(_MARKER)
         if start == -1:

@@ -31,6 +31,9 @@ class Config:
     max_offers: int = 50
     score_threshold: int = 6
     collect_interval_min: int = 15
+    # Kwork: раздел биржи (11 — «Разработка и IT»; null — все разделы) и сколько страниц смотреть
+    kwork_category: int | None = 11
+    kwork_pages: int = 3
     portfolio: list[PortfolioItem] = field(default_factory=list)
 
 
@@ -60,6 +63,8 @@ def load_config(path: Path) -> Config:
         raise ConfigError("collect_interval_min должен быть не меньше 10 минут")
     if not 0 <= cfg.score_threshold <= 10:
         raise ConfigError("score_threshold должен быть от 0 до 10")
+    if not 1 <= cfg.kwork_pages <= 10:
+        raise ConfigError("kwork_pages должен быть от 1 до 10")
     if cfg.min_budget_rub < 0 or cfg.max_offers < 0:
         raise ConfigError("min_budget_rub и max_offers не могут быть отрицательными")
     return cfg

@@ -31,6 +31,13 @@ def test_defaults_for_missing_fields(tmp_path):
     assert cfg.collect_interval_min == 15
     assert cfg.stop_words == []
     assert cfg.portfolio == []
+    assert cfg.kwork_category == 11
+    assert cfg.kwork_pages == 3
+
+
+def test_kwork_pages_range(tmp_path):
+    with pytest.raises(ConfigError, match="kwork_pages"):
+        load_config(write(tmp_path, "kwork_pages: 0\n"))
 
 
 def test_interval_too_small(tmp_path):
