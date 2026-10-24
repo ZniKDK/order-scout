@@ -16,6 +16,8 @@ log = logging.getLogger(__name__)
 
 # Хвост заголовка с бюджетом: «(Бюджет: 500 ₽, для всех)»
 _BUDGET_RE = re.compile(r"\s*\(Бюджет:\s*([^)]*)\)\s*$")
+# Заказ без бюджета, но «для всех» (без ограничения на PRO): «… (для всех)»
+_FOR_ALL_RE = re.compile(r"\s*\(для всех\)\s*$")
 _ID_RE = re.compile(r"/projects/(\d+)")
 
 
@@ -43,6 +45,7 @@ class FlruSource:
             if budget_match:
                 budget_kop = parse_rub(budget_match.group(1))
                 title = title[: budget_match.start()].strip()
+            title = _FOR_ALL_RE.sub("", title)
             pub_date = item.findtext("pubDate")
             orders.append(Order(
                 source=self.name,

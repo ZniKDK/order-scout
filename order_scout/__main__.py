@@ -1,3 +1,7 @@
 """Точка входа: python -m order_scout."""
 
-print("order-scout: команды появятся позже")
+import sys
+
+from order_scout.cli import main
+
+sys.exit(main())
