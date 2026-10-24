@@ -9,10 +9,5 @@ __pycache__/
 data/
 *.db
 
-# Локальные служебные файлы
-CLAUDE.md
-.claude/
-.superpowers/
-
 # Личные настройки (пример — config.example.yaml)
 config.yaml
