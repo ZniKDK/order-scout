@@ -64,6 +64,11 @@ async def collect_once(
             log.warning("Источник недоступен — %s", message)
             report.errors.append(message)
             continue
+        except Exception as error:  # noqa: BLE001 — биржа прислала неожиданные данные
+            message = f"{source.name}: ошибка разбора: {type(error).__name__}: {error}"
+            log.exception("Источник не разобран — %s", message)
+            report.errors.append(message)
+            continue
 
         for order_id in storage.add_orders(orders):
             report.new += 1

@@ -25,6 +25,14 @@ def _rub(value) -> int | None:
     return parse_rub(str(value)) if value not in (None, "") else None
 
 
+def _int(value) -> int | None:
+    """Kwork иногда отдаёт числа строками: "12" -> 12."""
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
 class KworkSource:
     name = "kwork"
     url = "https://kwork.ru/projects"
@@ -51,7 +59,7 @@ class KworkSource:
                 description=html.unescape(want.get("description", "")).replace("\r", "").strip(),
                 budget_kop=_rub(want.get("priceLimit")),
                 budget_max_kop=_rub(want.get("possiblePriceLimit")),
-                offers_count=want.get("kwork_count"),
+                offers_count=_int(want.get("kwork_count")),
                 created_at=(
                     datetime.fromisoformat(created).replace(tzinfo=MSK).astimezone(timezone.utc)
                     if created else None

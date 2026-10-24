@@ -34,6 +34,11 @@ def test_description_cleaned():
     assert '"Рабочие дома"' in description
 
 
+def test_offers_count_as_string():
+    page = '"wants":[{"id": 5, "name": "Бот", "kwork_count": "12"}]'
+    assert KworkSource().parse(page)[0].offers_count == 12
+
+
 def test_page_without_wants(caplog):
     with caplog.at_level(logging.WARNING):
         assert KworkSource().parse("<html><body>Новая вёрстка</body></html>") == []

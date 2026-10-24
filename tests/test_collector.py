@@ -58,6 +58,22 @@ async def test_one_source_down_others_collected(storage, cfg):
     assert len(report.errors) == 1 and "flru" in report.errors[0]
 
 
+class BrokenSource(DemoSource):
+    """Источник, у которого разбор падает на неожиданных данных."""
+
+    name = "broken"
+
+    def parse(self, payload):
+        raise KeyError("id")
+
+
+async def test_parse_error_reported_others_collected(storage, cfg):
+    async with httpx.AsyncClient() as client:
+        report = await collect_once(storage, cfg, [BrokenSource(), DemoSource()], client)
+    assert report.new == 8
+    assert len(report.errors) == 1 and "broken" in report.errors[0]
+
+
 async def test_timeout_is_reported_not_raised(storage, cfg):
     transport = make_transport(httpx.ReadTimeout("таймаут"))
     async with httpx.AsyncClient(transport=transport) as client:
