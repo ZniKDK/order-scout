@@ -24,6 +24,23 @@ class Order:
     created_at: datetime | None  # когда заказ опубликован (с часовым поясом)
 
 
+# Решение по заказу: берём, берём этапами, не рекомендую
+DECISIONS = ("take", "stages", "skip")
+
+
+@dataclass(frozen=True)
+class Evaluation:
+    """Оценка заказа и готовый отклик."""
+
+    decision: str               # take | stages | skip
+    score: int                  # 0–10
+    days: int                   # срок, дней
+    price_kop: int              # наша цена
+    risks: str                  # риски одной строкой
+    reply: str                  # текст отклика (пустой допустим только при skip)
+    portfolio_url: str | None   # похожий проект — для себя, не для отклика
+
+
 # Число: цифры с пробелами-разделителями тысяч и необязательной дробной частью
 _NUMBER_RE = re.compile(r"\d[\d\s ]*(?:[.,]\d{1,2})?")
 

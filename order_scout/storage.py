@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 
-from order_scout.models import Order
+from order_scout.models import Evaluation, Order
 
 # Жизненный цикл заказа:
 # new → pending (прошёл фильтр) | filtered_out → evaluated → carded → skipped | replied
@@ -28,7 +28,28 @@ CREATE TABLE IF NOT EXISTS orders (
     reason         TEXT,
     added_at       TEXT NOT NULL,
     UNIQUE (source, external_id)
-)
+);
+CREATE TABLE IF NOT EXISTS evaluations (
+    order_id      INTEGER PRIMARY KEY REFERENCES orders (id),
+    decision      TEXT NOT NULL,
+    score         INTEGER NOT NULL,
+    days          INTEGER NOT NULL,
+    price_kop     INTEGER NOT NULL,
+    risks         TEXT NOT NULL,
+    reply         TEXT NOT NULL,
+    portfolio_url TEXT,
+    evaluated_at  TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS actions (
+    id       INTEGER PRIMARY KEY AUTOINCREMENT,
+    order_id INTEGER NOT NULL REFERENCES orders (id),
+    action   TEXT NOT NULL,
+    at       TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS meta (
+    name  TEXT PRIMARY KEY,
+    value TEXT NOT NULL
+);
 """
 
 
@@ -60,7 +81,8 @@ class Storage:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         self._db = sqlite3.connect(self.path)
         self._db.row_factory = sqlite3.Row
-        self._db.execute(_SCHEMA)
+        # IF NOT EXISTS: база от прошлой версии открывается без миграций
+        self._db.executescript(_SCHEMA)
         self._db.commit()
 
     def add_orders(self, orders: Iterable[Order]) -> list[int]:
@@ -108,6 +130,63 @@ class Storage:
         """Сколько заказов в каждом статусе (пустые статусы не выводятся)."""
         rows = self._db.execute("SELECT status, COUNT(*) FROM orders GROUP BY status")
         return {status: count for status, count in rows}
+
+    def save_evaluation(self, order_id: int, ev: Evaluation) -> None:
+        """Сохраняет (или заменяет) оценку и переводит заказ в evaluated."""
+        self._db.execute(
+            "INSERT OR REPLACE INTO evaluations (order_id, decision, score, days,"
+            " price_kop, risks, reply, portfolio_url, evaluated_at)"
+            " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (order_id, ev.decision, ev.score, ev.days, ev.price_kop, ev.risks,
+             ev.reply, ev.portfolio_url, _to_iso(datetime.now(timezone.utc))),
+        )
+        self._db.execute("UPDATE orders SET status = 'evaluated' WHERE id = ?", (order_id,))
+        self._db.commit()
+
+    def get_evaluation(self, order_id: int) -> Evaluation | None:
+        row = self._db.execute(
+            "SELECT * FROM evaluations WHERE order_id = ?", (order_id,)
+        ).fetchone()
+        if row is None:
+            return None
+        return Evaluation(
+            decision=row["decision"], score=row["score"], days=row["days"],
+            price_kop=row["price_kop"], risks=row["risks"], reply=row["reply"],
+            portfolio_url=row["portfolio_url"],
+        )
+
+    def log_action(self, order_id: int, action: str) -> None:
+        """Журнал: что и когда происходило с заказом (карточка, нажатия)."""
+        self._db.execute(
+            "INSERT INTO actions (order_id, action, at) VALUES (?, ?, ?)",
+            (order_id, action, _to_iso(datetime.now(timezone.utc))),
+        )
+        self._db.commit()
+
+    def actions(self, order_id: int) -> list[tuple[str, datetime]]:
+        rows = self._db.execute(
+            "SELECT action, at FROM actions WHERE order_id = ? ORDER BY id", (order_id,)
+        )
+        return [(action, _from_iso(at)) for action, at in rows]
+
+    def count_actions_since(self, action: str, since: datetime) -> int:
+        """Сколько раз было действие начиная с момента since (для /stats)."""
+        row = self._db.execute(
+            "SELECT COUNT(*) FROM actions WHERE action = ? AND at >= ?",
+            (action, _to_iso(since)),
+        ).fetchone()
+        return row[0]
+
+    def get_flag(self, name: str) -> bool:
+        row = self._db.execute("SELECT value FROM meta WHERE name = ?", (name,)).fetchone()
+        return row is not None and row[0] == "1"
+
+    def set_flag(self, name: str, value: bool) -> None:
+        self._db.execute(
+            "INSERT OR REPLACE INTO meta (name, value) VALUES (?, ?)",
+            (name, "1" if value else "0"),
+        )
+        self._db.commit()
 
     def close(self) -> None:
         self._db.close()
