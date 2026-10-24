@@ -24,7 +24,7 @@ def test_example_config_loads():
 
 def test_defaults_for_missing_fields(tmp_path):
     cfg = load_config(write(tmp_path, "niches: [бот]\n"))
-    assert cfg.sources == ["flru", "kwork"]
+    assert cfg.sources == ["kwork"]
     assert cfg.min_budget_rub == 1000
     assert cfg.max_offers == 50
     assert cfg.score_threshold == 6

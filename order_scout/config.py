@@ -23,7 +23,8 @@ class PortfolioItem:
 class Config:
     """Настройки сбора и отбора заказов."""
 
-    sources: list[str] = field(default_factory=lambda: ["flru", "kwork"])
+    # По умолчанию — только биржи с бесплатными откликами (на FL.ru отклик платный)
+    sources: list[str] = field(default_factory=lambda: ["kwork"])
     niches: list[str] = field(default_factory=list)
     stop_words: list[str] = field(default_factory=list)
     min_budget_rub: int = 1000
