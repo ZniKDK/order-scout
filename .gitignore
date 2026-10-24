@@ -1,0 +1,15 @@
+# Окружение и кэш Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Секреты и рабочие данные
+.env
+data/
+*.db
+
+# Локальные служебные файлы
+CLAUDE.md
+.claude/
+.superpowers/
