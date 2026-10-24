@@ -91,7 +91,8 @@ def build_dispatcher(storage: Storage, owner_id: int) -> Dispatcher:
         answer = apply_action(storage, int(order_id), action)
         await callback.answer(answer)
         # Помечаем карточку, чтобы в ленте было видно, что с ней сделано
-        if callback.message and answer != "Уже отмечено":
+        # Старое сообщение (старше 48 ч) приходит как недоступное — его не правим
+        if isinstance(callback.message, Message) and answer != "Уже отмечено":
             mark = "✅ Отклик отправлен" if action == "sent" else "⏭ Пропущено"
             await callback.message.edit_text(
                 f"{callback.message.html_text}\n\n<b>{mark}</b>",
