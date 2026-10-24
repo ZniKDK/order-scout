@@ -23,6 +23,26 @@ def test_stats(tmp_path, capsys):
     assert "pending: 4" in out and "filtered_out: 4" in out
 
 
+def test_evaluate_rules_after_demo(tmp_path, capsys):
+    db = tmp_path / "orders.db"
+    main(["collect", "--demo", "--config", str(EXAMPLE), "--db", str(db)])
+    assert main(["evaluate", "--rules", "--config", str(EXAMPLE), "--db", str(db)]) == 0
+    capsys.readouterr()
+    main(["stats", "--db", str(db)])
+    assert "evaluated: 4" in capsys.readouterr().out
+
+
+def test_export_and_import_missing(tmp_path, capsys):
+    db = tmp_path / "orders.db"
+    main(["collect", "--demo", "--config", str(EXAMPLE), "--db", str(db)])
+    out_file = tmp_path / "pending.json"
+    assert main(["export", "--config", str(EXAMPLE), "--db", str(db), "--out", str(out_file)]) == 0
+    assert out_file.exists()
+    assert "выгружено: 4" in capsys.readouterr().out
+    assert main(["import", "--db", str(db), "--file", str(tmp_path / "none.json")]) == 0
+    assert "новых оценок нет" in capsys.readouterr().out
+
+
 def test_missing_config(tmp_path, capsys):
     code = main(["collect", "--config", str(tmp_path / "nope.yaml"), "--db", str(tmp_path / "o.db")])
     assert code == 2

@@ -20,7 +20,7 @@ def normalize(text: str) -> str:
     return text.casefold().replace("ё", "е")
 
 
-def _has_word(text: str, word: str) -> bool:
+def has_word(text: str, word: str) -> bool:
     """Ищет слово с начала слова: «бот» найдётся в «бота», но не в «работа»."""
     pattern = r"(?<!\w)" + re.escape(normalize(word))
     return re.search(pattern, text) is not None
@@ -31,7 +31,7 @@ def apply_filter(order: Order, cfg: Config) -> FilterResult:
     text = normalize(f"{order.title}\n{order.description}")
 
     for word in cfg.stop_words:
-        if _has_word(text, word):
+        if has_word(text, word):
             return FilterResult(False, f"стоп-слово: {word}")
 
     # Неизвестный бюджет не отсеиваем: часто он «по договорённости»
@@ -41,7 +41,7 @@ def apply_filter(order: Order, cfg: Config) -> FilterResult:
     if order.offers_count is not None and order.offers_count > cfg.max_offers:
         return FilterResult(False, f"откликов {order.offers_count} > {cfg.max_offers}")
 
-    if not any(_has_word(text, word) for word in cfg.niches):
+    if not any(has_word(text, word) for word in cfg.niches):
         return FilterResult(False, "не наша ниша")
 
     return FilterResult(True)
